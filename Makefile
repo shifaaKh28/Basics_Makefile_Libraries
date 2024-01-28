@@ -1,72 +1,82 @@
-# This Makefile compiles and links programs and libraries for NumClass
+# Makefile for compiling and building targets
 
-# Declare phony targets to avoid conflicts with file names
-.PHONY: all clean loops recursives recursived loopd
+# Compiler
+CC = gcc
 
-# Compiler and flags
-CC=gcc
-AR=ar rcs
-CFLAGS=-Wall
+# Compiler flags
+CFLAGS = -Wall
 
-# Default target: build mains, maindloop, and maindrec
-all: mains maindloop maindrec
+# Target executables
+TARGET1 = mains
+TARGET2 = maindloop
+TARGET3 = maindrec
 
-# Target to build the static library libclassloops.a
-loops: libclassloops.a
+# Static libraries
+LIB = libclassloops.a
+LIBREC = libclassrec.a
 
-# Target to build the static library libclassrec.a
-recursives: libclassrec.a
+# Shared libraries
+LIBREC_SO = libclassrec.so
+LIBLOOP_SO = libclassloops.so
 
-# Target to build the dynamic library libclassrec.so
-recursived: libclassrec.so
+# Source files
+SRC1 = main.c basicClassification.c advancedClassificationRecursion.c
+SRC2 = main.c basicClassification.c advancedClassificationLoop.c
+SRC3 = main.c basicClassification.c advancedClassificationRecursion.c
 
-# Target to build the dynamic library libclassloops.so
-loopd: libclassloops.so
+# Header file
+HEADERS = NumClass.h
 
-# Target to build the main program mains
-mains: main.o libclassrec.a
-	$(CC) $(CFLAGS) main.o libclassrec.a -lm -o mains
+# Default target: build all executables and libraries
+all: $(TARGET1) $(TARGET2) $(TARGET3) loops recursives
 
-# Target to build the main program maindloop
-maindloop: main.o libclassloops.so
-	$(CC) $(CFLAGS) main.o ./libclassloops.so -lm -o maindloop
+# Compilation rules for the executables
+$(TARGET1): $(SRC1) $(HEADERS) $(LIBREC)
+	$(CC) $(CFLAGS) -o $(TARGET1) $(SRC1) -L. -lclassrec
 
-# Target to build the main program maindrec
-maindrec: main.o libclassrec.so
-	$(CC) $(CFLAGS) main.o ./libclassrec.so -lm -o maindrec
+$(TARGET2): $(SRC2) $(HEADERS) $(LIBLOOP_SO)
+	$(CC) $(CFLAGS) -fPIC -o $(TARGET2) $(SRC2) -L. -lclassloops
 
-# Target to compile main.c into main.o
-main.o: main.c NumClass.h
-	$(CC) $(CFLAGS) -c main.c
+$(TARGET3): $(SRC3) $(HEADERS) $(LIBREC_SO)
+	$(CC) $(CFLAGS) -fPIC -o $(TARGET3) $(SRC3) -L. -lclassrec
 
-# Target to compile advancedClassificationLoop.c into advancedClassificationLoop.o
-advancedClassificationLoop.o: advancedClassificationLoop.c NumClass.h
-	$(CC) $(CFLAGS) -fPIC -c advancedClassificationLoop.c
+# Build static library for loops
+recursives: $(LIBREC)
 
-# Target to compile advancedClassificationRecursion.c into advancedClassificationRecursion.o
-advancedClassificationRecursion.o: advancedClassificationRecursion.c NumClass.h
-	$(CC) $(CFLAGS) -fPIC -c advancedClassificationRecursion.c
+# Build shared library for recursion
+recursived: $(LIBREC_SO)
 
-# Target to compile basicClassification.c into basicClassification.o
-basicClassification.o: basicClassification.c NumClass.h
-	$(CC) $(CFLAGS) -fPIC -c basicClassification.c
+# Build static library for loops
+loops: $(LIB)
 
-# Target to build the static library libclassloops.a
-libclassloops.a: advancedClassificationLoop.o basicClassification.o
-	$(AR) libclassloops.a advancedClassificationLoop.o basicClassification.o
+# Build shared library for loops
+loopd: $(LIBLOOP_SO)
 
-# Target to build the static library libclassrec.a
-libclassrec.a: advancedClassificationRecursion.o basicClassification.o
-	$(AR) libclassrec.a advancedClassificationRecursion.o basicClassification.o
+# Compilation rules for static libraries
+$(LIB): advancedClassificationLoop.o basicClassification.o
+	ar rcs $(LIB) advancedClassificationLoop.o basicClassification.o
 
-# Target to build the dynamic library libclassloops.so
-libclassloops.so: advancedClassificationLoop.o basicClassification.o
-	$(CC) $(CFLAGS) -shared advancedClassificationLoop.o basicClassification.o -o libclassloops.so
+$(LIBREC): advancedClassificationRecursion.o basicClassification.o
+	ar rcs $(LIBREC) advancedClassificationRecursion.o basicClassification.o
 
-# Target to build the dynamic library libclassrec.so
-libclassrec.so: advancedClassificationRecursion.o basicClassification.o
-	$(CC) $(CFLAGS) -shared advancedClassificationRecursion.o basicClassification.o -o libclassrec.so
+# Compilation rules for shared libraries
+$(LIBREC_SO): advancedClassificationRecursion.o basicClassification.o
+	$(CC) -shared -o $(LIBREC_SO) advancedClassificationRecursion.o basicClassification.o
 
-# Target to clean up compiled files and executables
+$(LIBLOOP_SO): advancedClassificationLoop.o basicClassification.o
+	$(CC) -shared -o $(LIBLOOP_SO) advancedClassificationLoop.o basicClassification.o
+
+# Compilation rules for object files
+advancedClassificationLoop.o: advancedClassificationLoop.c $(HEADERS)
+	$(CC) $(CFLAGS) -fPIC -c -o advancedClassificationLoop.o advancedClassificationLoop.c
+
+basicClassification.o: basicClassification.c $(HEADERS)
+	$(CC) $(CFLAGS) -fPIC -c -o basicClassification.o basicClassification.c
+
+advancedClassificationRecursion.o: advancedClassificationRecursion.c $(HEADERS)
+	$(CC) $(CFLAGS) -fPIC -c -o advancedClassificationRecursion.o advancedClassificationRecursion.c
+
+# Clean rule to remove generated files
+.PHONY: clean
 clean:
-	rm -f *.o *.a *so *.gch mains maindloop maindrec
+	rm -f $(TARGET1) $(TARGET2) $(TARGET3) $(LIB) $(LIBREC) $(LIBREC_SO) $(LIBLOOP_SO) advancedClassificationLoop.o advancedClassificationRecursion.o basicClassification.o
