@@ -2,10 +2,6 @@
 /*in this file we implemnt the isPrime and isStrong methods*/
 #include "NumClass.h"
 int isPrime(int n) {
-        if (n <= 1) {
-            return 0;  // false
-        }
-
         for (int i = 2; i * i <= n; ++i) {
             if (n % i == 0) {
                 return 0;  // If the number is divisible by any number between 2 and sqrt(num), it's not prime
